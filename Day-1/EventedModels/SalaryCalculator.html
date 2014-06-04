@@ -14,20 +14,36 @@
 	<script src="jquery-1.11.1.js"></script>
 	<script>
 	function SalaryCalculator(){
-		this.basic = 0;
-		this.hra = 0;
-		this.da = 0;
-		this.tax = 0;
-		this.salary = 0;
+		//this.basic = 0;
+		var modelState = {basic : 0, hra : 0, da : 0, tax : 0, salary : 0};
+		this.set = function(attrName,value){
+			modelState[attrName] = value;
+			this.trigger(attrName);
+		};
+		this.get = function(attrName){
+			return modelState[attrName];
+		};
 
-		this.onSalaryChange = null;
+		var subscribers = {};
+		this.addSubscriber = function(attrName, subscription){
+			subscribers[attrName] = subscribers[attrName] || [];
+			subscribers[attrName].push(subscription);
+		};
+		this.trigger = function(attrName){
+			var subscriptions = subscribers[attrName] || [];
+			for(var i=0;i<subscriptions.length;i++){
+				var subscription = subscriptions[i];
+				subscription();
+			}
+		}
+		
 	}
 	SalaryCalculator.prototype.calculate = function(){
-		var gross = this.basic + this.hra + this.da;
-		var net = gross * ((100-this.tax)/100);
-		this.salary = net;
-		if (typeof this.onSalaryChange === "function")
-			this.onSalaryChange();
+		var gross = this.get('basic') + this.get('hra') + this.get('da');
+		var net = gross * ((100-this.get('tax'))/100);
+		this.set('salary',net);
+		//this.triggerSalaryChange();
+		//this.trigger("salary");
 	}
 
 	</script>
@@ -36,30 +52,42 @@
 	$(document).ready(function(){
 		window.calculator = new SalaryCalculator();
 
-		calculator.onSalaryChange = function(){
-			$("#divResult").html(calculator.salary);
-		};
+		/*Acting on Model changes*/
+		calculator.addSubscriber("salary", function(){
+			$("#divResult").html(calculator.get('salary'));
+		});
+		calculator.addSubscriber("basic", function(){
+			$("#txtBasic").val(calculator.get('basic'));
+		});
+		calculator.addSubscriber("hra", function(){
+			$("#txtHra").val(calculator.get('hra'));
+		});
+		calculator.addSubscriber("da", function(){
+			$("#txtDa").val(calculator.get('da'));
+		});
+		calculator.addSubscriber("tax", function(){
+			$("#rangeTax").val(calculator.get('tax'));
+			$("#spanTax").text(calculator.get('tax') + "%");
+		});
 
-		
+		/*Acting on UI Changes*/
 		$("#txtBasic").change(function(){
-			calculator.basic = parseInt(this.value,10);
+			calculator.set('basic',parseInt(this.value,10));
 		});
 		$("#txtHra").change(function(){
-			calculator.hra = parseInt(this.value,10);
+			calculator.set('hra',parseInt(this.value,10));
 		});
 		$("#txtDa").change(function(){
-			calculator.da = parseInt(this.value,10);
+			calculator.set('da',parseInt(this.value,10));
 		});
 		$("#rangeTax").change(function(){
-			calculator.tax = parseInt(this.value,10);
+			calculator.set('tax',parseInt(this.value,10));
 		});
 		$("#btnCalculate").click(function(){
 			calculator.calculate();
 			
 		});
-		$("#rangeTax").change(function(){
-			$("#spanTax").text(this.value + "%");
-		});
+		
 	});
 	</script>
 
