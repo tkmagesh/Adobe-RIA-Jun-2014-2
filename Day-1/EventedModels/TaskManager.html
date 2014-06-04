@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Task Manager</title>
+	<style>
+	.completed {
+		color : red;
+		text-decoration: line-through;
+		font-style: italic;
+	}
+
+	</style>
+	<script src="jquery-1.11.1.js"></script>
+	<script>
+	function Task(name){
+		var modelState = {name : name, isCompleted : false};
+		this.set = function(attrName,value){
+			modelState[attrName] = value;
+			this.trigger(attrName);
+		};
+		this.get = function(attrName){
+			return modelState[attrName];
+		};
+
+		this.remove = function(){
+			this.trigger('remove');
+		}
+
+		this.toggleCompletion = function(){
+			modelState["isCompleted"] = !modelState["isCompleted"];
+			this.trigger("isCompleted");
+		}
+
+		var subscribers = {};
+		this.addSubscriber = function(attrName, subscription){
+			subscribers[attrName] = subscribers[attrName] || [];
+			subscribers[attrName].push(subscription);
+		};
+		this.trigger = function(attrName){
+			var subscriptions = subscribers[attrName] || [];
+			for(var i=0;i<subscriptions.length;i++){
+				var subscription = subscriptions[i];
+				subscription();
+			}
+		}
+	}
+
+	function TaskView(model){
+		var task = this.task = model;
+		var $root = this.$root = $("<li></li>");
+		
+		this.initialize = function(){
+			/*Bind UI events*/
+			$root.on("click",function(){
+				task.toggleCompletion();
+			});
+
+			/* Model Change Events*/
+			task.addSubscriber("isCompleted",this.render);
+			task.addSubscriber("remove",function(){
+				$root.remove();
+			})
+		}
+
+		this.render = function(){
+			$root.html(task.get('name'));
+			if (task.get('isCompleted')){
+				$root.addClass("completed");
+			} else {
+				$root.removeClass("completed");
+			}
+			return this;
+		}
+	}
+
+	function TaskCollection(){
+		var tasks = [];
+
+		this.add = function(taskName){
+			var newTask = new Task(taskName);
+			tasks.push(newTask);
+			this.trigger('add',newTask);
+		};
+
+		this.removeCompleted = function(){
+			for(var i = tasks.length-1;i>=0;i--){
+				if (tasks[i].get('isCompleted') === true){
+					tasks[i].remove();
+					tasks.splice(i,1);
+					
+				}
+			}
+		}
+		this.getAll = function(){
+			return tasks;
+		}
+
+		var subscribers = {};
+		this.addSubscriber = function(attrName, subscription){
+			subscribers[attrName] = subscribers[attrName] || [];
+			subscribers[attrName].push(subscription);
+		};
+		this.trigger = function(attrName,value){
+			var subscriptions = subscribers[attrName] || [];
+			for(var i=0;i<subscriptions.length;i++){
+				var subscription = subscriptions[i];
+				subscription(value);
+			}
+		}
+
+	}
+
+	function TaskCollectionView(collection){
+		var taskCollection = this.taskCollection = collection;
+		var $root = this.$root = $("<div></div>");
+
+		this.initialize = function(){
+			/*UI Element events*/
+			$root.on("click","#btnAddTask",function(){
+				var taskName = $("#txtTask",$root).val();
+				taskCollection.add(taskName);
+			});
+
+			$root.on("click","#btnRemoveCompleted",function(){
+				taskCollection.removeCompleted();
+			});
+
+			/*Collection events*/
+			taskCollection.addSubscriber("add", function(newTask){
+				var newTaskView = new TaskView(newTask);
+				newTaskView.initialize();
+				newTaskView.render().$root.appendTo($("#ulTaskList",$root));
+			});
+		};
+		this.render = function(){
+			var templateHTML = $("#taskManagerTemplate").html();
+			this.$root.append(templateHTML);
+			return this;
+		};
+
+	}
+
+	$(function(){
+		window.taskCollection = new TaskCollection();
+		window.taskCollectionView = new TaskCollectionView(window.taskCollection);
+		taskCollectionView.initialize();
+		taskCollectionView.render().$root.appendTo(document.body);
+	})
+
+	</script>
+	<script type="text/template" id="taskManagerTemplate">
+		<span>Task :</span>
+		<input type="text" name="" id="txtTask">
+		<input type="button" value="Add Task" id="btnAddTask">
+		<input type="button" value="Remove Completed" id="btnRemoveCompleted">
+		<ul id="ulTaskList"></ul>
+	</script>
+</head>
+<body>
+	<h1>Task Manager</h1>
+	<hr></hr>
+	
+</body>
+</html>
