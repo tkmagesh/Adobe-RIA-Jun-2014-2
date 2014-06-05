@@ -12,8 +12,17 @@
 	</style>
 	<script src="angular.js"></script>
 	<script>
+	angular.module('app.utils',[])
+		.filter('limitLength',function(){
+			return function(data,maxLength){
+				data = data || "";
+				maxLength = maxLength || 20;
+				return data.substr(0,maxLength) + "...";
+			}
+		});
+
 	angular
-		.module("taskApp", [])
+		.module("taskApp", ['app.utils'])
 		.factory('Task',function(){
 			function Task(name){
 				this.name = name;
@@ -27,13 +36,6 @@
 		.service('notificationService',function(){
 			this.notify = function(msg){
 				console.log(msg);
-			}
-		})
-		.filter('limitLength',function(){
-			return function(data,maxLength){
-				data = data || "";
-				maxLength = maxLength || 20;
-				return data.substr(0,maxLength) + "...";
 			}
 		})
 		.controller('taskController', function($scope, Task, notificationService){
