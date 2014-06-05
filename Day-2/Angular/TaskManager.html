@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Task Manager</title>
+	<style>
+	.completed{
+		color : red;
+		text-decoration: line-through;
+		font-style: italic;
+	}
+	</style>
+	<script src="angular.js"></script>
+	<script>
+	angular
+		.module("taskApp", [])
+		.factory('Task',function(){
+			function Task(name){
+				this.name = name;
+				this.isCompleted = false;
+			}
+			Task.prototype.toggleCompletion = function(){
+				this.isCompleted = !this.isCompleted;
+			}
+			return Task;
+		})
+		.service('notificationService',function(){
+			this.notify = function(msg){
+				console.log(msg);
+			}
+		})
+		.filter('limitLength',function(){
+			return function(data,maxLength){
+				data = data || "";
+				maxLength = maxLength || 20;
+				return data.substr(0,maxLength) + "...";
+			}
+		})
+		.controller('taskController', function($scope, Task, notificationService){
+			
+			$scope.tasks = {
+				list : [],
+				addTask : function(newTask){
+					var task = new Task(newTask);
+					this.list.push(task);
+				},
+				removeCompleted : function(){
+					for(var i=this.list.length -1;i>=0;i--){
+						if (this.list[i].isCompleted){
+							this.list.splice(i,1);
+						}
+					}
+				}
+			}
+		});
+
+	</script>
+</head>
+<body data-ng-app="taskApp">
+	<div data-ng-controller="taskController">
+	<h1>Task Manager</h1>
+	Length : <select data-ng-model='taskLength'>
+		<option value="10">10</option>
+		<option value="20">20</option>
+	</select>
+	<hr>
+		<span>Task :</span>
+		<input type="text" data-ng-model="newTask">
+		<input type="button" value="Add Task" data-ng-click="tasks.addTask(newTask)">
+		<input type="button" value="Remove Completed" data-ng-click="tasks.removeCompleted()">
+		<ul>
+			<li 
+				data-ng-repeat="task in tasks.list" 
+				data-ng-click="task.toggleCompletion()"
+				data-ng-class="{completed : task.isCompleted}"
+				>{{task.name | limitLength:taskLength | uppercase}}</li>
+		</ul>
+	</div>
+</body>
+</html>
