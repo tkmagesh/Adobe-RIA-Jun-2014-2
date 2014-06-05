@@ -96,7 +96,7 @@
 			return this;
 		}
 	}
-	$(function(){
+	$(document).ready(function(){
 		window.calculator = new SalaryCalculator();
 		window.calculatorView = new SalaryCalculatorView(window.calculator);
 		calculatorView.initialize();
